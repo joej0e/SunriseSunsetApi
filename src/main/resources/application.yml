@@ -2,20 +2,28 @@
 spring:
   # Database
   datasource:
-    driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5433/postgres #set your db url
-    username: postgres #set your username
-    password: sofarfrom142 #set your password
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:testdb #set your db url
+    username: sa #set your username
+    password: password #set your password
+    h2:
+      console:
+        enabled: true
+        path: /h2-console
   # JPA properties
   jpa:
     hibernate:
       ddl-auto: create-drop # When you launch the application for the first time - switch "none" at "create"
     show-sql: true
-    database: postgresql
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    database: h2
+    database-platform: org.hibernate.dialect.H2Dialect
     open-in-view: false
     generate-ddl: true
+
 # Logger configuration
 server:
   port: 8080 #set your port
-
+urls:
+  CITIES_URL: https://simplemaps.com/static/data/country-cities/ua/ua.json
+  GEOCODE_URL: https://eu1.locationiq.com/v1/search.php?key=bacf3d0fed499b&countrycode=ua&country=ukraine&limit=1&format=json
+  SUNRISE_SUNSET_URL: https://api.sunrise-sunset.org/json?

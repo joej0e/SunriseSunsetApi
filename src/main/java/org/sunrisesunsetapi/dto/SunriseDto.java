@@ -4,9 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
-public class SunriseSunset {
+public class SunriseDto {
     @JsonProperty
     private String sunrise;
-    @JsonProperty
-    private String sunset;
 }

@@ -2,20 +2,26 @@ package org.sunrisesunsetapi.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.sunrisesunsetapi.dto.GeocodeResponse;
-import org.sunrisesunsetapi.dto.SunriseSunsetResponse;
+import org.sunrisesunsetapi.dto.GeocodeResponseDto;
+import org.sunrisesunsetapi.dto.SunriseSunsetDto;
+import org.sunrisesunsetapi.exception.CityNotFoundException;
+import org.sunrisesunsetapi.exception.LocationTypeException;
 import org.sunrisesunsetapi.model.City;
 import org.sunrisesunsetapi.repository.CityRepository;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import java.util.Optional;
@@ -29,10 +35,14 @@ public class SunriseSunsetService {
 
     private final ObjectMapper mapper;
 
-    public static final String CITIES_URL = "https://simplemaps.com/static/data/country-cities/ua/ua.json";
-    public static final String GEOCODE_URL = "https://eu1.locationiq.com/v1/search.php?" +
-            "key=bacf3d0fed499b&countrycode=ua&country=ukraine&limit=1&format=json";
-    public static final String SUNRISE_SUNSET_URL = "https://api.sunrise-sunset.org/json?";
+    @Value("${urls.CITIES_URL}")
+    private String citiesUrl;
+
+    @Value("${urls.GEOCODE_URL}")
+    private String geocodeUrl;
+
+    @Value("${urls.SUNRISE_SUNSET_URL}")
+    private String sunriseSunsetUrl;
 
     @Autowired
     public SunriseSunsetService(CityRepository cityRepository, ObjectMapper mapper) {
@@ -44,35 +54,107 @@ public class SunriseSunsetService {
     @Transactional
     @PostConstruct
     @Scheduled(cron = "0 15 05 00 * ?")
-    public void saveCities() throws IOException {
-        URL url = new URL(CITIES_URL);
-        HttpURLConnection con = (HttpURLConnection) url.openConnection();
-        con.setRequestMethod("GET");
-        TypeReference<List<City>> typeReference = new TypeReference<>() {
-        };
-        List<City> cities = mapper.readValue(con.getInputStream(), typeReference);
+    public void saveCities() {
+        URL url = null;
+        try {
+            url = new URL(citiesUrl);
+        } catch (MalformedURLException e) {
+            log.error("CITIES_URL property in application.yml is incorrect");
+            e.printStackTrace();
+        }
+        HttpURLConnection con = null;
+        List<City> cities = null;
+        try {
+            assert url != null;
+            con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("GET");
+            TypeReference<List<City>> typeReference = new TypeReference<>() {
+            };
+            try (InputStream inputStream = con.getInputStream()) {
+                cities = mapper.readValue(inputStream, typeReference);
+            } catch (IOException e) {
+                log.error("Error has occurred while getting list of cities");
+                e.printStackTrace();
+            }
+        } catch (IOException e) {
+            log.error("Can't connect to resource with cities");
+            e.printStackTrace();
+        } finally {
+            assert con != null;
+            con.disconnect();
+        }
+        assert cities != null;
         cityRepository.saveAll(cities);
     }
 
-    private GeocodeResponse getCoordinates(String cityName) throws IOException {
-        URL url = new URL(GEOCODE_URL + "&city=" + cityName);
-        HttpURLConnection con = (HttpURLConnection) url.openConnection();
-        con.setRequestMethod("GET");
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        return mapper.readValue(con.getInputStream(), GeocodeResponse[].class)[0];
+    private GeocodeResponseDto getCoordinates(String cityName) {
+        URL url = null;
+        try {
+            url = new URL(geocodeUrl + "&city=" + cityName);
+        } catch (MalformedURLException e) {
+            log.error("GEOCODE_URL property in application.yml is incorrect");
+            e.printStackTrace();
+        }
+        GeocodeResponseDto geocodeResponseDto = null;
+        HttpURLConnection con = null;
+        try {
+            assert url != null;
+            con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("GET");
+            try (InputStream inputStream = con.getInputStream()) {
+                geocodeResponseDto = mapper.readValue(inputStream, GeocodeResponseDto[].class)[0];
+                String type = geocodeResponseDto.getType();
+                if (!(type.equals("city") || type.equals("town")
+                        || type.equals("village") || type.equals("administrative"))) {
+                    throw new LocationTypeException("Please, provide place that have type of: city, town, village, administrative");
+                }
+            } catch (IOException e) {
+                log.error("Error has occurred while getting coordinates");
+                e.printStackTrace();
+            }
+        } catch (IOException e) {
+            log.error("Can't connect to Geocode API");
+            e.printStackTrace();
+        } finally {
+            assert con != null;
+            con.disconnect();
+        }
+        assert geocodeResponseDto != null;
+        return geocodeResponseDto;
     }
 
-    public SunriseSunsetResponse getSunriseSunset(String cityName) throws IOException {
-        City city = cityRepository.getCityByCity(cityName).orElseThrow();
-        URL url = new URL(SUNRISE_SUNSET_URL + "lat=" + city.getLat() + "&lng=" + city.getLng());
-        HttpURLConnection con = (HttpURLConnection) url.openConnection();
-        con.setRequestMethod("GET");
-        return mapper.readValue(con.getInputStream(), SunriseSunsetResponse.class);
+    public SunriseSunsetDto getSunriseSunset(String cityName) {
+        City city = cityRepository.getCityByCity(cityName).orElseThrow(() -> new CityNotFoundException("City with name" + cityName + "not found"));
+        URL url = null;
+        try {
+            url = new URL(sunriseSunsetUrl + "lat=" + city.getLat() + "&lng=" + city.getLng());
+        } catch (MalformedURLException e) {
+            log.error("SUNRISE_SUNSET_URL property in application.yml is incorrect");
+            e.printStackTrace();
+        }
+        HttpURLConnection con = null;
+        JsonNode jsonNode = null;
+        try {
+            assert url != null;
+            con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("GET");
+            try (InputStream inputStream = con.getInputStream()) {
+                jsonNode = mapper.readValue(inputStream, JsonNode.class).get("results");
+            }
+        } catch (IOException e) {
+            log.error("Can't connect to Sunrise-Sunset API");
+            e.printStackTrace();
+        } finally {
+            assert con != null;
+            con.disconnect();
+        }
+        assert jsonNode != null;
+        return new SunriseSunsetDto(jsonNode.get("sunrise").textValue(), jsonNode.get("sunset").textValue());
     }
 
-    public City addCity(String cityName) throws IOException {
-        GeocodeResponse geocodeResponse = getCoordinates(cityName);
-        City city = new City(cityName, geocodeResponse.getLat(), geocodeResponse.getLon());
+    public City addCity(String cityName) {
+        GeocodeResponseDto geocodeResponseDto = getCoordinates(cityName);
+        City city = new City(cityName, geocodeResponseDto.getLat(), geocodeResponseDto.getLon());
         return cityRepository.save(city);
     }
 

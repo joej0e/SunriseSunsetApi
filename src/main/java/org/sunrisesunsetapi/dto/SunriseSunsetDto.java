@@ -2,9 +2,13 @@ package org.sunrisesunsetapi.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 
 @AllArgsConstructor
-public class Sunset {
+@Getter
+public class SunriseSunsetDto {
+    @JsonProperty
+    private String sunrise;
     @JsonProperty
     private String sunset;
 }
