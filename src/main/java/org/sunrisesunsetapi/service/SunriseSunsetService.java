@@ -59,7 +59,7 @@ public class SunriseSunsetService {
         try {
             url = new URL(citiesUrl);
         } catch (MalformedURLException e) {
-            log.error("CITIES_URL property in application.yml is incorrect");
+            log.error("CITIES_URL property in application.yml is incorrect", e);
         }
         HttpURLConnection con = null;
         List<City> cities = null;
@@ -72,10 +72,10 @@ public class SunriseSunsetService {
             try (InputStream inputStream = con.getInputStream()) {
                 cities = mapper.readValue(inputStream, typeReference);
             } catch (IOException e) {
-                log.error("Error has occurred while getting list of cities");
+                log.error("Error has occurred while getting list of cities", e);
             }
         } catch (IOException e) {
-            log.error("Can't connect to resource with cities");
+            log.error("Can't connect to resource with cities", e);
         } finally {
             assert con != null;
             con.disconnect();
@@ -89,7 +89,7 @@ public class SunriseSunsetService {
         try {
             url = new URL(geocodeUrl + "&city=" + cityName);
         } catch (MalformedURLException e) {
-            log.error("GEOCODE_URL property in application.yml is incorrect");
+            log.error("GEOCODE_URL property in application.yml is incorrect", e);
         }
         GeocodeResponseDto geocodeResponseDto = null;
         HttpURLConnection con = null;
@@ -105,10 +105,10 @@ public class SunriseSunsetService {
                     throw new LocationTypeException("Please, provide place that have type of: city, town, village, administrative");
                 }
             } catch (IOException e) {
-                log.error("Error has occurred while getting coordinates");
+                log.error("Error has occurred while getting coordinates", e);
             }
         } catch (IOException e) {
-            log.error("Can't connect to Geocode API");
+            log.error("Can't connect to Geocode API", e);
         } finally {
             assert con != null;
             con.disconnect();
@@ -123,7 +123,7 @@ public class SunriseSunsetService {
         try {
             url = new URL(sunriseSunsetUrl + "lat=" + city.getLat() + "&lng=" + city.getLng());
         } catch (MalformedURLException e) {
-            log.error("SUNRISE_SUNSET_URL property in application.yml is incorrect");
+            log.error("SUNRISE_SUNSET_URL property in application.yml is incorrect", e);
         }
         HttpURLConnection con = null;
         JsonNode jsonNode = null;
@@ -135,7 +135,7 @@ public class SunriseSunsetService {
                 jsonNode = mapper.readValue(inputStream, JsonNode.class).get("results");
             }
         } catch (IOException e) {
-            log.error("Can't connect to Sunrise-Sunset API");
+            log.error("Can't connect to Sunrise-Sunset API", e);
         } finally {
             assert con != null;
             con.disconnect();
