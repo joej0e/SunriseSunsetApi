@@ -63,8 +63,10 @@ public class SunriseSunsetService {
         }
         HttpURLConnection con = null;
         List<City> cities = null;
+        if (url == null) {
+            throw new NullPointerException("url is null");
+        }
         try {
-            assert url != null;
             con = (HttpURLConnection) url.openConnection();
             con.setRequestMethod("GET");
             TypeReference<List<City>> typeReference = new TypeReference<>() {
@@ -77,10 +79,13 @@ public class SunriseSunsetService {
         } catch (IOException e) {
             log.error("Can't connect to resource with cities", e);
         } finally {
-            assert con != null;
-            con.disconnect();
+            if (con != null) {
+                con.disconnect();
+            }
         }
-        assert cities != null;
+        if (cities == null) {
+            throw new NullPointerException("cities is null");
+        }
         cityRepository.saveAll(cities);
     }
 
@@ -93,8 +98,10 @@ public class SunriseSunsetService {
         }
         GeocodeResponseDto geocodeResponseDto = null;
         HttpURLConnection con = null;
+        if (url == null) {
+            throw new NullPointerException("url is null");
+        }
         try {
-            assert url != null;
             con = (HttpURLConnection) url.openConnection();
             con.setRequestMethod("GET");
             try (InputStream inputStream = con.getInputStream()) {
@@ -110,10 +117,13 @@ public class SunriseSunsetService {
         } catch (IOException e) {
             log.error("Can't connect to Geocode API", e);
         } finally {
-            assert con != null;
-            con.disconnect();
+            if (con != null) {
+                con.disconnect();
+            }
         }
-        assert geocodeResponseDto != null;
+        if (geocodeResponseDto == null) {
+            throw new NullPointerException("geocodeResponse is null");
+        }
         return geocodeResponseDto;
     }
 
@@ -127,8 +137,10 @@ public class SunriseSunsetService {
         }
         HttpURLConnection con = null;
         JsonNode jsonNode = null;
+        if (url == null) {
+            throw new NullPointerException("url is null");
+        }
         try {
-            assert url != null;
             con = (HttpURLConnection) url.openConnection();
             con.setRequestMethod("GET");
             try (InputStream inputStream = con.getInputStream()) {
@@ -137,10 +149,13 @@ public class SunriseSunsetService {
         } catch (IOException e) {
             log.error("Can't connect to Sunrise-Sunset API", e);
         } finally {
-            assert con != null;
-            con.disconnect();
+            if (con != null) {
+                con.disconnect();
+            }
         }
-        assert jsonNode != null;
+        if (jsonNode == null) {
+            throw new NullPointerException("cities is null");
+        }
         return new SunriseSunsetDto(jsonNode.get("sunrise").textValue(), jsonNode.get("sunset").textValue());
     }
 
