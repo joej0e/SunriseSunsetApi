@@ -17,7 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @RunWith(SpringRunner.class)
 @AutoConfigureMockMvc
-class SunriseDtoSunsetDtoApiApplicationTests {
+class SunriseSunsetApiApplicationTests {
 
     @Autowired
     private MockMvc mvc;

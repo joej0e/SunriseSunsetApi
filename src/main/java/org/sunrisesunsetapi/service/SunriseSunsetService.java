@@ -60,7 +60,6 @@ public class SunriseSunsetService {
             url = new URL(citiesUrl);
         } catch (MalformedURLException e) {
             log.error("CITIES_URL property in application.yml is incorrect");
-            e.printStackTrace();
         }
         HttpURLConnection con = null;
         List<City> cities = null;
@@ -74,11 +73,9 @@ public class SunriseSunsetService {
                 cities = mapper.readValue(inputStream, typeReference);
             } catch (IOException e) {
                 log.error("Error has occurred while getting list of cities");
-                e.printStackTrace();
             }
         } catch (IOException e) {
             log.error("Can't connect to resource with cities");
-            e.printStackTrace();
         } finally {
             assert con != null;
             con.disconnect();
@@ -93,7 +90,6 @@ public class SunriseSunsetService {
             url = new URL(geocodeUrl + "&city=" + cityName);
         } catch (MalformedURLException e) {
             log.error("GEOCODE_URL property in application.yml is incorrect");
-            e.printStackTrace();
         }
         GeocodeResponseDto geocodeResponseDto = null;
         HttpURLConnection con = null;
@@ -110,11 +106,9 @@ public class SunriseSunsetService {
                 }
             } catch (IOException e) {
                 log.error("Error has occurred while getting coordinates");
-                e.printStackTrace();
             }
         } catch (IOException e) {
             log.error("Can't connect to Geocode API");
-            e.printStackTrace();
         } finally {
             assert con != null;
             con.disconnect();
@@ -130,7 +124,6 @@ public class SunriseSunsetService {
             url = new URL(sunriseSunsetUrl + "lat=" + city.getLat() + "&lng=" + city.getLng());
         } catch (MalformedURLException e) {
             log.error("SUNRISE_SUNSET_URL property in application.yml is incorrect");
-            e.printStackTrace();
         }
         HttpURLConnection con = null;
         JsonNode jsonNode = null;
@@ -143,7 +136,6 @@ public class SunriseSunsetService {
             }
         } catch (IOException e) {
             log.error("Can't connect to Sunrise-Sunset API");
-            e.printStackTrace();
         } finally {
             assert con != null;
             con.disconnect();
